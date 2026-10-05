@@ -1,0 +1,1487 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Painel Executivo Pro - HubCentral</title>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  
+  <!-- Supabase CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    :root {
+      --bg-main: #07090e;
+      --bg-gradient: radial-gradient(circle at 15% 15%, rgba(99, 102, 241, 0.08) 0%, transparent 50%),
+                     radial-gradient(circle at 85% 85%, rgba(52, 211, 153, 0.06) 0%, transparent 50%);
+      --card-bg: rgba(13, 18, 30, 0.65);
+      --card-bg-hover: rgba(22, 30, 48, 0.85);
+      --border-color: rgba(255, 255, 255, 0.06);
+      --border-hover: rgba(99, 102, 241, 0.3);
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --accent-indigo: #6366f1;
+      --accent-cyan: #06b6d4;
+      --accent-pink: #ec4899;
+      --accent-emerald: #10b981;
+      --accent-amber: #f59e0b;
+      --shadow-card: 0 10px 30px -5px rgba(0, 0, 0, 0.5), inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
+      --radius-box: 1.25rem;
+      --radius-btn: 0.85rem;
+      --transition-fast: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    
+    html, body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background-color: var(--bg-main);
+      color: var(--text-main);
+      width: 100%;
+      height: 100vh;
+      overflow: hidden;
+      background-image: var(--bg-gradient);
+    }
+
+    h1, h2, h3, h4 { font-family: 'Space Grotesk', sans-serif; letter-spacing: -0.03em; }
+
+    .app-container {
+      width: 100%;
+      height: 100%;
+      background: rgba(7, 9, 14, 0.85);
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .app-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1.5rem 1.15rem;
+      padding-bottom: 6rem;
+      scrollbar-width: none;
+      width: 100%;
+      max-width: 600px;
+      margin: 0 auto;
+      scroll-behavior: smooth;
+    }
+    .app-content::-webkit-scrollbar { display: none; }
+
+    .glass-card {
+      background: var(--card-bg);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-box);
+      padding: 1.15rem;
+      margin-bottom: 1rem;
+      box-shadow: var(--shadow-card);
+      width: 100%;
+      position: relative;
+      transition: var(--transition-fast);
+    }
+    .glass-card:hover {
+      border-color: var(--border-hover);
+      background: var(--card-bg-hover);
+      transform: translateY(-3px);
+      box-shadow: 0 15px 35px -5px rgba(0, 0, 0, 0.6), 0 0 20px rgba(99, 102, 241, 0.1);
+    }
+
+    .screen-panel { display: none !important; animation: fadeInView 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; height: 100%; flex-direction: column; width: 100%; }
+    .screen-panel.active-screen { display: flex !important; }
+
+    @keyframes fadeInView {
+      from { opacity: 0; transform: translateY(12px) scale(0.98); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    .bottom-nav-bar {
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100%;
+      max-width: 600px;
+      height: 74px;
+      background: rgba(10, 14, 24, 0.9);
+      backdrop-filter: blur(30px);
+      -webkit-backdrop-filter: blur(30px);
+      border-top: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+      padding: 0 0.5rem;
+      z-index: 50;
+      box-shadow: 0 -15px 30px rgba(0,0,0,0.6);
+    }
+
+    .bottom-nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      flex: 1;
+      height: 100%;
+      gap: 4px;
+      transition: var(--transition-fast);
+      position: relative;
+    }
+    .bottom-nav-item i { font-size: 1.2rem; transition: var(--transition-fast); }
+    .bottom-nav-item span { font-size: 10px; font-weight: 600; letter-spacing: 0.02em; }
+    .bottom-nav-item:hover { color: var(--text-main); }
+    .bottom-nav-item.active { color: var(--accent-emerald); }
+    .bottom-nav-item.active i { transform: translateY(-2px); }
+    .bottom-nav-item.active::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      width: 32px;
+      height: 4px;
+      background: var(--accent-emerald);
+      border-radius: 0 0 6px 6px;
+      box-shadow: 0 0 15px var(--accent-emerald);
+    }
+
+    .chat-sub-nav {
+      display: flex;
+      background: rgba(10, 14, 24, 0.8);
+      border: 1px solid var(--border-color);
+      margin-bottom: 1rem;
+      border-radius: 1rem;
+      padding: 5px;
+      gap: 6px;
+      width: 100%;
+      flex-shrink: 0;
+    }
+
+    .chat-sub-tab {
+      flex: 1;
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      padding: 0.65rem 0.4rem;
+      border-radius: 0.75rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: var(--transition-fast);
+    }
+    .chat-sub-tab.active {
+      background: rgba(16, 185, 129, 0.15);
+      color: var(--accent-emerald);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      box-shadow: 0 0 15px rgba(16, 185, 129, 0.1);
+    }
+
+    .modal-overlay {
+      display: none !important;
+      position: fixed;
+      inset: 0;
+      background: rgba(3, 5, 10, 0.8);
+      backdrop-filter: blur(25px);
+      -webkit-backdrop-filter: blur(25px);
+      z-index: 60;
+      align-items: center;
+      justify-content: center;
+      padding: 1.25rem;
+      animation: fadeInView 0.25s ease;
+    }
+    .modal-overlay.show { display: flex !important; }
+
+    .modal-box {
+      background: linear-gradient(145deg, rgba(15, 22, 38, 0.98), rgba(9, 14, 26, 0.98));
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 1.75rem;
+      padding: 1.5rem;
+      width: 100%;
+      max-width: 420px;
+      max-height: 85vh;
+      overflow-y: auto;
+      box-shadow: 0 25px 60px rgba(0,0,0,0.8), 0 0 30px rgba(99, 102, 241, 0.15);
+    }
+
+    input, select, textarea {
+      width: 100%;
+      background: rgba(3, 6, 14, 0.9);
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      padding: 0.85rem 1.1rem;
+      border-radius: var(--radius-btn);
+      font-size: 0.85rem;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      outline: none;
+      margin-bottom: 0.85rem;
+      transition: var(--transition-fast);
+    }
+    input:focus, select:focus, textarea:focus { 
+      border-color: var(--accent-emerald); 
+      box-shadow: 0 0 15px rgba(16,185,129,0.2); 
+      background: rgba(3, 6, 14, 1);
+    }
+
+    .btn {
+      padding: 0.6rem 1rem;
+      border-radius: var(--radius-btn);
+      font-size: 0.8rem;
+      font-weight: 600;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      border: none;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.4rem;
+      transition: var(--transition-fast);
+      white-space: nowrap;
+    }
+    .btn:active { transform: scale(0.95); }
+    .btn-primary { background: var(--accent-indigo); color: #fff; box-shadow: 0 4px 15px rgba(99,102,241,0.4); }
+    .btn-cyan { background: var(--accent-cyan); color: #030712; font-weight: 700; box-shadow: 0 4px 15px rgba(6,182,212,0.4); }
+    .btn-pink { background: var(--accent-pink); color: #030712; font-weight: 700; box-shadow: 0 4px 15px rgba(236,72,153,0.4); }
+    .btn-emerald { background: var(--accent-emerald); color: #030712; font-weight: 700; box-shadow: 0 4px 15px rgba(16,185,129,0.4); }
+    .btn-amber { background: var(--accent-amber); color: #030712; font-weight: 700; box-shadow: 0 4px 15px rgba(245,158,11,0.4); }
+    .btn-secondary { background: rgba(255, 255, 255, 0.05); color: var(--text-muted); border: 1px solid var(--border-color); }
+    .btn-secondary:hover { background: rgba(255, 255, 255, 0.1); color: var(--text-main); }
+    .btn-danger { background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
+
+    .flex-row { display: flex; align-items: center; justify-content: space-between; width: 100%; }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0.85rem; width: 100%; }
+    .text-xs { font-size: 0.75rem; }
+    .text-sm { font-size: 0.88rem; }
+    .text-bold { font-weight: 600; }
+    .text-muted { color: var(--text-muted); }
+
+    .safe-header-block {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-box);
+      padding: 1rem 1.15rem;
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      backdrop-filter: blur(20px);
+    }
+
+    .wa-chat-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-box);
+      padding: 1rem 1.15rem;
+      cursor: pointer;
+      text-decoration: none;
+      color: var(--text-main);
+      width: 100%;
+      margin-bottom: 0.85rem;
+      transition: var(--transition-fast);
+    }
+    .wa-chat-row:hover { background: var(--card-bg-hover); border-color: var(--border-hover); transform: translateY(-2px); }
+    .wa-chat-info { display: flex; align-items: center; gap: 0.9rem; overflow: hidden; flex: 1; }
+    .wa-avatar { width: 46px; height: 46px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; flex-shrink: 0; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+
+    .item-card-btn {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-box);
+      padding: 1rem;
+      margin-bottom: 0.85rem;
+      cursor: pointer;
+      display: block;
+      width: 100%;
+      text-align: left;
+      color: inherit;
+      transition: var(--transition-fast);
+    }
+    .item-card-btn:hover { background: var(--card-bg-hover); transform: translateY(-2px); border-color: var(--border-hover); }
+
+    .whatsapp-settings-container { display: flex; flex-direction: column; padding: 0.2rem; width: 100%; }
+    .wa-settings-header { display: flex; align-items: center; justify-content: space-between; padding-bottom: 1.15rem; margin-bottom: 0.6rem; border-bottom: 1px solid var(--border-color); width: 100%; }
+    .wa-settings-item { display: flex; align-items: center; gap: 1rem; padding: 1rem 0.75rem; cursor: pointer; border-radius: 1rem; width: 100%; transition: var(--transition-fast); }
+    .wa-settings-item:hover { background: rgba(255, 255, 255, 0.04); transform: translateX(4px); }
+  </style>
+</head>
+<body>
+
+  <!-- TELA DE AUTENTICAÇÃO (LOGIN / REGISTO COM EMAIL) -->
+  <div id="auth-screen" style="display: flex; position: fixed; inset: 0; background: var(--bg-main); z-index: 100; align-items: center; justify-content: center; padding: 1.25rem;">
+    <div class="glass-card" style="max-width: 420px; width: 100%; padding: 2.25rem; border: 1px solid rgba(99,102,241,0.2);">
+      <div style="text-align: center; margin-bottom: 1.75rem;">
+        <div style="width: 64px; height: 64px; margin: 0 auto 1rem; border-radius: 20px; background: linear-gradient(135deg, #6366f1, #06b6d4); display: flex; align-items: center; justify-content: center; font-size: 1.75rem; color: #fff; box-shadow: 0 10px 25px rgba(99,102,241,0.5);">
+          <i class="fa-solid fa-bolt"></i>
+        </div>
+        <h2 style="font-size: 1.5rem;" id="authTitleMain">HubCentral Supabase</h2>
+        <p class="text-xs text-muted" style="margin-top: 6px;" id="authSubTitleMain">Entre com o seu e-mail ou crie uma conta</p>
+      </div>
+
+      <div id="authErrorMsg" style="background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.3); color: #f87171; padding: 0.75rem; border-radius: 0.75rem; font-size: 0.78rem; margin-bottom: 1rem; display: none;"></div>
+
+      <input type="text" id="authUsername" placeholder="Nome de utilizador (ex: João)" style="display: none;">
+      <input type="email" id="authEmail" placeholder="O seu e-mail (ex: seuemail@dominio.com)">
+      <input type="password" id="authPassword" placeholder="Palavra-passe">
+
+      <button class="btn btn-emerald" id="authSubmitBtn" onclick="handleAuthSubmit()" style="width: 100%; justify-content: center; padding: 0.85rem; margin-top: 0.5rem; font-size: 0.9rem;">Entrar com E-mail</button>
+      
+      <div style="text-align: center; margin-top: 1.25rem; display: flex; flex-direction: column; gap: 8px;">
+        <button class="btn btn-secondary" onclick="toggleAuthMode()" id="authToggleBtn" style="font-size: 0.78rem; background: transparent; border: none;">Não tem conta? Crie uma com o e-mail</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="app-container">
+    <div class="app-content" id="mainContentArea">
+
+      <!-- TELA 1: INÍCIO -->
+      <section id="screen-inicio" class="screen-panel active-screen">
+        <div class="glass-card" style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(6, 182, 212, 0.08)); border: 1px solid rgba(99, 102, 241, 0.35);">
+          <div class="flex-row">
+            <div style="display: flex; align-items: center; gap: 1rem;">
+              <div style="width: 54px; height: 54px; border-radius: 16px; background: linear-gradient(135deg, #6366f1, #06b6d4); display: flex; align-items: center; justify-content: center; font-size: 1.4rem; color: #fff; box-shadow: 0 8px 25px rgba(99,102,241,0.5);">
+                <i class="fa-solid fa-bolt"></i>
+              </div>
+              <div>
+                <span class="text-xs text-muted text-bold" style="letter-spacing: 0.05em;">PAINEL EXECUTIVO</span>
+                <h2 class="text-sm text-bold" style="font-size: 1.35rem; margin-top: 2px;" id="welcomeUserName">Olá, Estudante</h2>
+              </div>
+            </div>
+            <div style="background: rgba(255, 255, 255, 0.06); border: 1px solid var(--border-color); padding: 0.5rem 0.9rem; border-radius: 0.9rem; font-size: 0.78rem; color: var(--accent-cyan); font-weight: 700;" id="currentDateHeader">--/--/----</div>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="glass-card" style="border-left: 4px solid var(--accent-emerald); cursor: pointer; margin-bottom: 0;" onclick="switchScreen('escolar')">
+            <div class="flex-row" style="margin-bottom: 6px;">
+              <span class="text-xs text-bold text-muted">BIMESTRES</span>
+              <div style="width: 32px; height: 32px; border-radius: 10px; background: rgba(16,185,129,0.15); display: flex; align-items: center; justify-content: center;"><i class="fa-solid fa-graduation-cap" style="color: var(--accent-emerald);"></i></div>
+            </div>
+            <h2 style="font-size: 2rem; color: var(--accent-emerald);" id="statBimestresCount">0</h2>
+            <span class="text-xs text-muted" style="margin-top: 4px; display: block;">Gestão académica</span>
+          </div>
+          <div class="glass-card" style="border-left: 4px solid var(--accent-cyan); cursor: pointer; margin-bottom: 0;" onclick="switchScreen('escolar')">
+            <div class="flex-row" style="margin-bottom: 6px;">
+              <span class="text-xs text-bold text-muted">MATÉRIAS</span>
+              <div style="width: 32px; height: 32px; border-radius: 10px; background: rgba(6,182,212,0.15); display: flex; align-items: center; justify-content: center;"><i class="fa-solid fa-book-open" style="color: var(--accent-cyan);"></i></div>
+            </div>
+            <h2 style="font-size: 2rem; color: var(--accent-cyan);" id="statMateriasCount">0</h2>
+            <span class="text-xs text-muted" style="margin-top: 4px; display: block;" id="statBimestreLabelName">Bimestre Ativo</span>
+          </div>
+        </div>
+
+        <div class="grid-2" style="margin-top: 0.85rem;">
+          <div class="glass-card" style="border-left: 4px solid var(--accent-pink); cursor: pointer; margin-bottom: 0;" onclick="switchScreen('apps')">
+            <div class="flex-row" style="margin-bottom: 6px;">
+              <span class="text-xs text-bold text-muted">APLICATIVOS</span>
+              <div style="width: 32px; height: 32px; border-radius: 10px; background: rgba(236,72,153,0.15); display: flex; align-items: center; justify-content: center;"><i class="fa-solid fa-cube" style="color: var(--accent-pink);"></i></div>
+            </div>
+            <h2 style="font-size: 2rem; color: var(--accent-pink);" id="statAppsCount">0</h2>
+            <span class="text-xs text-muted" style="margin-top: 4px; display: block;">Links e utilitários</span>
+          </div>
+          <div class="glass-card" style="border-left: 4px solid var(--accent-amber); cursor: pointer; margin-bottom: 0;" onclick="switchScreen('jogos')">
+            <div class="flex-row" style="margin-bottom: 6px;">
+              <span class="text-xs text-bold text-muted">JOGOS</span>
+              <div style="width: 32px; height: 32px; border-radius: 10px; background: rgba(245,158,11,0.15); display: flex; align-items: center; justify-content: center;"><i class="fa-solid fa-gamepad" style="color: var(--accent-amber);"></i></div>
+            </div>
+            <h2 style="font-size: 2rem; color: var(--accent-amber);" id="statGamesCount">0</h2>
+            <span class="text-xs text-muted" style="margin-top: 4px; display: block;">Entretenimento</span>
+          </div>
+        </div>
+
+        <!-- ÚLTIMAS ATUALIZAÇÕES -->
+        <div class="glass-card" style="border-left: 4px solid var(--accent-emerald); margin-top: 0.85rem; background: linear-gradient(135deg, rgba(16,185,129,0.06), var(--card-bg));">
+          <span class="text-xs text-bold text-muted">SUPABASE INTEGRADO</span>
+          <h3 class="text-sm text-bold" style="font-size: 1.1rem; margin: 6px 0;">Sincronização em Nuvem por E-mail</h3>
+          <p class="text-xs text-muted" style="line-height: 1.5;">
+            • Registo e login seguros por e-mail.<br>
+            • Dados persistentes associados à sua conta pessoal.
+          </p>
+        </div>
+      </section>
+
+      <!-- TELA 2: HUB -->
+      <section id="screen-hub" class="screen-panel">
+        <div class="safe-header-block">
+          <div>
+            <span class="text-xs text-bold" style="color: var(--accent-cyan);">CENTRAL DE UTILITÁRIOS</span>
+            <h2 class="text-sm text-bold" style="font-size: 1.25rem; margin-top: 2px;">Apps, Jogos & Notas</h2>
+          </div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 0.85rem;">
+          <a class="wa-chat-row" style="margin-bottom:0;" onclick="switchScreen('apps')">
+            <div class="wa-chat-info">
+              <div class="wa-avatar" style="background: rgba(6,182,212,0.15); color: var(--accent-cyan);">
+                <i class="fa-solid fa-cube"></i>
+              </div>
+              <div>
+                <h3 class="text-sm text-bold" style="font-size: 1.05rem;">Meus Aplicativos</h3>
+                <span class="text-xs text-muted" id="hubAppsCount">0 apps guardados</span>
+              </div>
+            </div>
+            <i class="fa-solid fa-chevron-right text-xs text-muted"></i>
+          </a>
+
+          <a class="wa-chat-row" style="margin-bottom:0;" onclick="switchScreen('jogos')">
+            <div class="wa-chat-info">
+              <div class="wa-avatar" style="background: rgba(236,72,153,0.15); color: var(--accent-pink);">
+                <i class="fa-solid fa-gamepad"></i>
+              </div>
+              <div>
+                <h3 class="text-sm text-bold" style="font-size: 1.05rem;">Meus Jogos</h3>
+                <span class="text-xs text-muted" id="hubGamesCount">0 jogos guardados</span>
+              </div>
+            </div>
+            <i class="fa-solid fa-chevron-right text-xs text-muted"></i>
+          </a>
+
+          <a class="wa-chat-row" style="margin-bottom:0;" onclick="switchScreen('notas')">
+            <div class="wa-chat-info">
+              <div class="wa-avatar" style="background: rgba(245,158,11,0.15); color: var(--accent-amber);">
+                <i class="fa-solid fa-note-sticky"></i>
+              </div>
+              <div>
+                <h3 class="text-sm text-bold" style="font-size: 1.05rem;">Bloco de Notas</h3>
+                <span class="text-xs text-muted" id="hubNotesCount">0 notas guardadas</span>
+              </div>
+            </div>
+            <i class="fa-solid fa-chevron-right text-xs text-muted"></i>
+          </a>
+        </div>
+      </section>
+
+      <!-- TELA 2.1: APPS -->
+      <section id="screen-apps" class="screen-panel">
+        <div class="safe-header-block">
+          <div style="display: flex; align-items: center; gap: 0.75rem;">
+            <button class="btn btn-secondary" onclick="switchScreen('hub')" style="padding: 0.45rem 0.8rem;"><i class="fa-solid fa-arrow-left"></i></button>
+            <div>
+              <span class="text-xs text-bold" style="color: var(--accent-cyan);">UTILITÁRIOS</span>
+              <h2 class="text-sm text-bold" style="font-size: 1.15rem; margin-top: 2px;">Aplicativos</h2>
+            </div>
+          </div>
+          <button class="btn btn-cyan" onclick="openAppModal()"><i class="fa-solid fa-plus"></i> Novo</button>
+        </div>
+        <div id="appsListContainer" style="width: 100%;"></div>
+      </section>
+
+      <!-- TELA 2.2: JOGOS -->
+      <section id="screen-jogos" class="screen-panel">
+        <div class="safe-header-block">
+          <div style="display: flex; align-items: center; gap: 0.75rem;">
+            <button class="btn btn-secondary" onclick="switchScreen('hub')" style="padding: 0.45rem 0.8rem;"><i class="fa-solid fa-arrow-left"></i></button>
+            <div>
+              <span class="text-xs text-bold" style="color: var(--accent-pink);">ENTRETENIMENTO</span>
+              <h2 class="text-sm text-bold" style="font-size: 1.15rem; margin-top: 2px;">Jogos</h2>
+            </div>
+          </div>
+          <button class="btn btn-pink" onclick="openGameModal()"><i class="fa-solid fa-plus"></i> Novo</button>
+        </div>
+        <div id="gamesListContainer" style="width: 100%;"></div>
+      </section>
+
+      <!-- TELA 2.3: BLOCO DE NOTAS -->
+      <section id="screen-notas" class="screen-panel">
+        <div class="safe-header-block">
+          <div style="display: flex; align-items: center; gap: 0.75rem;">
+            <button class="btn btn-secondary" onclick="switchScreen('hub')" style="padding: 0.45rem 0.8rem;"><i class="fa-solid fa-arrow-left"></i></button>
+            <div>
+              <span class="text-xs text-bold" style="color: var(--accent-amber);">PRODUTIVIDADE</span>
+              <h2 class="text-sm text-bold" style="font-size: 1.15rem; margin-top: 2px;">Bloco de Notas</h2>
+            </div>
+          </div>
+          <button class="btn btn-amber" onclick="openNoteModal()"><i class="fa-solid fa-plus"></i> Nota</button>
+        </div>
+        <div id="notesListContainer" style="width: 100%;"></div>
+      </section>
+
+      <!-- TELA 3: ESCOLAR -->
+      <section id="screen-escolar" class="screen-panel">
+        <div class="safe-header-block">
+          <div>
+            <span class="text-xs text-bold" style="color: var(--accent-emerald);">ACADÉMICO</span>
+            <h2 class="text-sm text-bold" style="font-size: 1.25rem; margin-top: 2px;">Painel por Bimestre</h2>
+          </div>
+          <div style="display: flex; gap: 0.5rem;">
+            <button class="btn btn-secondary" onclick="openShareStructureModal()" style="padding: 0.45rem 0.7rem;" title="Partilhar Estrutura"><i class="fa-solid fa-share-nodes"></i></button>
+            <button class="btn btn-emerald" onclick="openBimestreModal()" style="padding: 0.45rem 0.8rem;"><i class="fa-solid fa-plus"></i> Bimestre</button>
+          </div>
+        </div>
+
+        <div class="chat-sub-nav">
+          <button class="chat-sub-tab active" id="bimestreSubTab-ativo" onclick="switchBimestreSubTab('ativo')">
+            <i class="fa-solid fa-bolt"></i> Ativo
+          </button>
+          <button class="chat-sub-tab" id="bimestreSubTab-acomecar" onclick="switchBimestreSubTab('acomecar')">
+            <i class="fa-solid fa-clock"></i> A começar
+          </button>
+          <button class="chat-sub-tab" id="bimestreSubTab-concluido" onclick="switchBimestreSubTab('concluido')">
+            <i class="fa-solid fa-circle-check"></i> Concluído
+          </button>
+        </div>
+
+        <div id="bimestresCardsContainer" style="width: 100%; display: flex; flex-direction: column; gap: 0.85rem;"></div>
+      </section>
+
+      <!-- TELA 3.0: DETALHE DO BIMESTRE -->
+      <section id="screen-bimestre-detalhe" class="screen-panel">
+        <div class="safe-header-block">
+          <div style="display: flex; align-items: center; gap: 0.75rem;">
+            <button class="btn btn-secondary" onclick="switchScreen('escolar')" style="padding: 0.45rem 0.8rem;"><i class="fa-solid fa-arrow-left"></i></button>
+            <div>
+              <span class="text-xs text-bold" style="color: var(--accent-emerald);">BIMESTRE SELECIONADO</span>
+              <h2 class="text-sm text-bold" style="font-size: 1.15rem; margin-top: 2px;" id="detalheBimestreName">Bimestre</h2>
+            </div>
+          </div>
+          <div style="display: flex; gap: 0.5rem;">
+            <button class="btn btn-secondary" onclick="openCopyBimestreModal()" style="padding: 0.45rem 0.7rem;" title="Copiar Estrutura"><i class="fa-solid fa-copy"></i></button>
+            <button class="btn btn-cyan" onclick="openSubAreaModal()" style="padding: 0.45rem 0.8rem;"><i class="fa-solid fa-plus"></i> Sub-área</button>
+          </div>
+        </div>
+        <div id="subAreasListContainer" style="width: 100%;"></div>
+      </section>
+
+      <!-- TELA 3.1: MATÉRIAS DA SUB-ÁREA -->
+      <section id="screen-subarea-detalhe" class="screen-panel">
+        <div class="safe-header-block">
+          <div style="display: flex; align-items: center; gap: 0.75rem;">
+            <button class="btn btn-secondary" onclick="openBimestreDetalhes(activeBimestreIndex)" style="padding: 0.45rem 0.8rem;"><i class="fa-solid fa-arrow-left"></i></button>
+            <div>
+              <span class="text-xs text-bold" style="color: var(--accent-emerald);" id="detalheSubAreaBimLabel">BIMESTRE</span>
+              <h2 class="text-sm text-bold" style="font-size: 1.15rem; margin-top: 2px;" id="detalheSubAreaName">Sub-área</h2>
+            </div>
+          </div>
+          <button class="btn btn-cyan" onclick="openMateriaModal()"><i class="fa-solid fa-plus"></i> Matéria</button>
+        </div>
+
+        <div id="subAreaMateriasContainer" style="width: 100%;"></div>
+      </section>
+
+      <!-- TELA 3.2: CONTEÚDOS E ATIVIDADES -->
+      <section id="screen-materia-detalhe" class="screen-panel">
+        <div class="safe-header-block">
+          <div style="display: flex; align-items: center; gap: 0.75rem;">
+            <button class="btn btn-secondary" onclick="backToSubAreaScreen()" style="padding: 0.45rem 0.8rem;"><i class="fa-solid fa-arrow-left"></i></button>
+            <div>
+              <span class="text-xs text-bold" style="color: var(--accent-emerald);" id="detalheMateriaSubAreaLabel">SUB-ÁREA</span>
+              <h2 class="text-sm text-bold" style="font-size: 1.15rem; margin-top: 2px;" id="detalheMateriaName">Matéria</h2>
+            </div>
+          </div>
+          <button class="btn btn-emerald" onclick="openSchoolItemModal()"><i class="fa-solid fa-plus"></i> Item</button>
+        </div>
+
+        <div class="chat-sub-nav">
+          <button class="chat-sub-tab active" id="matTab-conteudo" onclick="switchMatTab('conteudo')">
+            <i class="fa-solid fa-book-open"></i> Conteúdos
+          </button>
+          <button class="chat-sub-tab" id="matTab-atividade" onclick="switchMatTab('atividade')">
+            <i class="fa-solid fa-tasks"></i> Atividades
+          </button>
+        </div>
+
+        <div id="materiaItemsContainer" style="width: 100%;"></div>
+      </section>
+
+      <!-- TELA 5: CONFIGURAÇÕES -->
+      <section id="screen-config" class="screen-panel">
+        <div class="whatsapp-settings-container">
+          <div class="wa-settings-header">
+            <div style="display: flex; align-items: center; gap: 0.85rem;">
+              <button class="btn btn-secondary" onclick="switchScreen('inicio')" style="padding: 0.45rem 0.8rem;"><i class="fa-solid fa-arrow-left"></i></button>
+              <h2 class="text-sm text-bold" style="font-size: 1.2rem;" id="configHeaderTitleName">J.C</h2>
+            </div>
+            <div style="display: flex; gap: 0.5rem;">
+              <button class="btn btn-secondary" onclick="openSearchConfigModal()" style="padding: 0.45rem 0.7rem;"><i class="fa-solid fa-magnifying-glass"></i></button>
+              <button class="btn btn-secondary" onclick="openQrConfigModal()" style="padding: 0.45rem 0.7rem;"><i class="fa-solid fa-qrcode"></i></button>
+              <button class="btn btn-secondary" onclick="openEditProfileModal()" style="padding: 0.45rem 0.7rem;"><i class="fa-solid fa-pen"></i></button>
+            </div>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 0.4rem; width: 100%;">
+            <div class="wa-settings-item" onclick="handleLogout()" style="border-bottom: 1px solid var(--border-color); padding-bottom: 1rem; margin-bottom: 0.5rem;">
+              <div style="width: 36px; height: 36px; border-radius: 10px; background: rgba(6,182,212,0.15); display: flex; align-items: center; justify-content: center; color: var(--accent-cyan); font-size: 1rem;"><i class="fa-solid fa-right-from-bracket"></i></div>
+              <div><div class="text-sm text-bold" style="color: var(--accent-cyan);">Terminar Sessão</div><div class="text-xs text-muted">Sair da conta atual</div></div>
+            </div>
+            <div class="wa-settings-item" onclick="triggerSettingAction('conta')">
+              <div style="width: 36px; height: 36px; border-radius: 10px; background: rgba(255,255,255,0.05); display: flex; align-items: center; justify-content: center; color: var(--text-muted); font-size: 1rem;"><i class="fa-solid fa-key"></i></div>
+              <div><div class="text-sm text-bold">Conta</div><div class="text-xs text-muted" id="configUserEmailLabel">Sincronizado via Supabase</div></div>
+            </div>
+            <div class="wa-settings-item" onclick="triggerSettingAction('privacidade')">
+              <div style="width: 36px; height: 36px; border-radius: 10px; background: rgba(255,255,255,0.05); display: flex; align-items: center; justify-content: center; color: var(--text-muted); font-size: 1rem;"><i class="fa-solid fa-lock"></i></div>
+              <div><div class="text-sm text-bold">Privacidade</div><div class="text-xs text-muted">Protegido por RLS</div></div>
+            </div>
+            <div class="wa-settings-item" onclick="resetAllAppData()" style="margin-top: 0.75rem; border-top: 1px solid var(--border-color); padding-top: 1rem;">
+              <div style="width: 36px; height: 36px; border-radius: 10px; background: rgba(239,68,68,0.15); display: flex; align-items: center; justify-content: center; color: #f87171; font-size: 1rem;"><i class="fa-solid fa-triangle-exclamation"></i></div>
+              <div><div class="text-sm text-bold" style="color: #f87171;">Repor Dados</div><div class="text-xs text-muted">Apaga bimestres, apps e jogos locais.</div></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+
+    <!-- BARRA INFERIOR -->
+    <nav class="bottom-nav-bar">
+      <button onclick="switchScreen('inicio')" id="nav-inicio" class="bottom-nav-item active">
+        <i class="fa-solid fa-house"></i>
+        <span>Início</span>
+      </button>
+      <button onclick="switchScreen('hub')" id="nav-hub" class="bottom-nav-item">
+        <i class="fa-solid fa-cube"></i>
+        <span>Apps & Jogos</span>
+      </button>
+      <button onclick="switchScreen('escolar')" id="nav-escolar" class="bottom-nav-item">
+        <i class="fa-solid fa-graduation-cap"></i>
+        <span>Escolar</span>
+      </button>
+      <button onclick="switchScreen('config')" id="nav-config" class="bottom-nav-item">
+        <i class="fa-solid fa-gear"></i>
+        <span>Config</span>
+      </button>
+    </nav>
+  </div>
+
+  <!-- MODAIS -->
+  <div id="appModal" class="modal-overlay">
+    <div class="modal-box" style="border-top: 3px solid var(--accent-cyan);">
+      <div class="flex-row" style="margin-bottom: 1.25rem;"><h3 class="text-sm text-bold" style="font-size: 1.1rem;">Adicionar Aplicativo</h3><button class="btn btn-secondary" onclick="closeAppModal()" style="padding: 0.35rem 0.6rem;"><i class="fa-solid fa-xmark"></i></button></div>
+      <input type="text" id="newAppName" placeholder="Nome do aplicativo">
+      <input type="text" id="newAppUrl" placeholder="https://link.com">
+      <div style="display: flex; justify-content: flex-end; gap: 0.6rem; margin-top: 0.5rem;"><button class="btn btn-secondary" onclick="closeAppModal()">Cancelar</button><button class="btn btn-cyan" onclick="saveNewApp()">Guardar</button></div>
+    </div>
+  </div>
+
+  <div id="gameModal" class="modal-overlay">
+    <div class="modal-box" style="border-top: 3px solid var(--accent-pink);">
+      <div class="flex-row" style="margin-bottom: 1.25rem;"><h3 class="text-sm text-bold" style="font-size: 1.1rem;">Adicionar Jogo</h3><button class="btn btn-secondary" onclick="closeGameModal()" style="padding: 0.35rem 0.6rem;"><i class="fa-solid fa-xmark"></i></button></div>
+      <input type="text" id="newGameName" placeholder="Nome do jogo">
+      <input type="text" id="newGameUrl" placeholder="https://link.com">
+      <div style="display: flex; justify-content: flex-end; gap: 0.6rem; margin-top: 0.5rem;"><button class="btn btn-secondary" onclick="closeGameModal()">Cancelar</button><button class="btn btn-pink" onclick="saveNewGame()">Guardar</button></div>
+    </div>
+  </div>
+
+  <div id="noteModal" class="modal-overlay">
+    <div class="modal-box" style="border-top: 3px solid var(--accent-amber);">
+      <div class="flex-row" style="margin-bottom: 1.25rem;"><h3 class="text-sm text-bold" style="font-size: 1.1rem;" id="noteModalTitle">Nova Nota</h3><button class="btn btn-secondary" onclick="closeNoteModal()" style="padding: 0.35rem 0.6rem;"><i class="fa-solid fa-xmark"></i></button></div>
+      <input type="text" id="newNoteTitle" placeholder="Título da nota">
+      <textarea id="newNoteContent" rows="5" placeholder="Escreva o conteúdo da nota..."></textarea>
+      <div style="display: flex; justify-content: flex-end; gap: 0.6rem; margin-top: 0.5rem;"><button class="btn btn-secondary" onclick="closeNoteModal()">Cancelar</button><button class="btn btn-amber" id="noteModalSaveBtn" onclick="saveNewNote()">Guardar</button></div>
+    </div>
+  </div>
+
+  <div id="viewNoteModal" class="modal-overlay">
+    <div class="modal-box" style="border-top: 3px solid var(--accent-amber);">
+      <div class="flex-row" style="margin-bottom: 0.85rem;">
+        <span class="text-xs text-bold" style="color: var(--accent-amber);">NOTA PESSOAL</span>
+        <button class="btn btn-secondary" onclick="closeViewNoteModal()" style="padding: 0.35rem 0.6rem;"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <h3 class="text-sm text-bold" id="viewNoteTitle" style="font-size: 1.2rem; margin-bottom: 0.75rem;"></h3>
+      <div class="glass-card" style="margin-bottom: 1.25rem; background: rgba(3,6,14,0.6);">
+        <p class="text-sm" id="viewNoteContent" style="margin-top: 4px; white-space: pre-wrap; font-size: 0.85rem; line-height: 1.5;"></p>
+      </div>
+      <div style="display: flex; justify-content: space-between;">
+        <button class="btn btn-secondary" id="editNoteBtn" onclick=""><i class="fa-solid fa-pen"></i> Editar</button>
+        <button class="btn btn-danger" id="deleteNoteBtn" onclick=""><i class="fa-solid fa-trash-can"></i> Eliminar</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="bimestreModal" class="modal-overlay">
+    <div class="modal-box" style="border-top: 3px solid var(--accent-emerald);">
+      <div class="flex-row" style="margin-bottom: 1.25rem;"><h3 class="text-sm text-bold" style="font-size: 1.1rem;" id="bimestreModalTitle">Novo Bimestre</h3><button class="btn btn-secondary" onclick="closeBimestreModal()" style="padding: 0.35rem 0.6rem;"><i class="fa-solid fa-xmark"></i></button></div>
+      <input type="text" id="newBimestreName" placeholder="Ex: 1º Bimestre">
+      <select id="newBimestreStatus">
+        <option value="ativo">Ativo (Em andamento)</option>
+        <option value="acomecar">A começar (Futuro)</option>
+        <option value="concluido">Concluído</option>
+      </select>
+      <div class="grid-2" style="margin-top: 0.2rem;">
+        <div>
+          <span class="text-xs text-muted" style="display:block; margin-bottom:4px;">Início</span>
+          <input type="text" id="newBimestreStart" placeholder="Ex: 01/02/2026">
+        </div>
+        <div>
+          <span class="text-xs text-muted" style="display:block; margin-bottom:4px;">Fim</span>
+          <input type="text" id="newBimestreEnd" placeholder="Ex: 30/04/2026">
+        </div>
+      </div>
+      <div style="display: flex; justify-content: flex-end; gap: 0.6rem; margin-top: 0.75rem;"><button class="btn btn-secondary" onclick="closeBimestreModal()">Cancelar</button><button class="btn btn-emerald" id="bimestreModalSaveBtn" onclick="saveNewBimestre()">Criar</button></div>
+    </div>
+  </div>
+
+  <div id="copyBimestreModal" class="modal-overlay">
+    <div class="modal-box" style="border-top: 3px solid var(--accent-cyan);">
+      <div class="flex-row" style="margin-bottom: 1.25rem;"><h3 class="text-sm text-bold" style="font-size: 1.1rem;">Copiar Conteúdo</h3><button class="btn btn-secondary" onclick="closeCopyBimestreModal()" style="padding: 0.35rem 0.6rem;"><i class="fa-solid fa-xmark"></i></button></div>
+      <p class="text-xs text-muted" style="margin-bottom: 0.85rem; line-height: 1.4;">Escolha para qual bimestre deseja copiar todas as sub-áreas e matérias atuais:</p>
+      <select id="targetBimestreSelect"></select>
+      <div style="display: flex; justify-content: flex-end; gap: 0.6rem; margin-top: 0.75rem;"><button class="btn btn-secondary" onclick="closeCopyBimestreModal()">Cancelar</button><button class="btn btn-cyan" onclick="executeCopyBimestre()">Copiar Agora</button></div>
+    </div>
+  </div>
+
+  <div id="shareStructureModal" class="modal-overlay">
+    <div class="modal-box" style="border-top: 3px solid var(--accent-emerald);">
+      <div class="flex-row" style="margin-bottom: 1.25rem;"><h3 class="text-sm text-bold" style="font-size: 1.1rem;">Partilhar Estrutura Escolar</h3><button class="btn btn-secondary" onclick="closeShareStructureModal()" style="padding: 0.35rem 0.6rem;"><i class="fa-solid fa-xmark"></i></button></div>
+      <p class="text-xs text-muted" style="margin-bottom: 0.6rem; line-height: 1.4;">Copie o código abaixo para enviar a um amigo ou cole a estrutura de outra pessoa:</p>
+      <textarea id="shareStructureText" rows="5" style="font-size: 0.78rem; font-family: monospace;"></textarea>
+      <div style="display: flex; gap: 0.6rem; justify-content: flex-end; margin-top: 0.75rem;">
+        <button class="btn btn-secondary" onclick="copyShareCode()">Copiar Código</button>
+        <button class="btn btn-emerald" onclick="importShareCode()">Importar</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="subAreaModal" class="modal-overlay">
+    <div class="modal-box" style="border-top: 3px solid var(--accent-cyan);">
+      <div class="flex-row" style="margin-bottom: 1.25rem;"><h3 class="text-sm text-bold" style="font-size: 1.1rem;" id="subAreaModalTitle">Nova Sub-área</h3><button class="btn btn-secondary" onclick="closeSubAreaModal()" style="padding: 0.35rem 0.6rem;"><i class="fa-solid fa-xmark"></i></button></div>
+      <input type="text" id="newSubAreaName" placeholder="Ex: Ciências Exatas, Humanas...">
+      <div style="display: flex; justify-content: flex-end; gap: 0.6rem; margin-top: 0.5rem;"><button class="btn btn-secondary" onclick="closeSubAreaModal()">Cancelar</button><button class="btn btn-cyan" id="subAreaModalSaveBtn" onclick="saveNewSubArea()">Adicionar</button></div>
+    </div>
+  </div>
+
+  <div id="materiaModal" class="modal-overlay">
+    <div class="modal-box" style="border-top: 3px solid var(--accent-cyan);">
+      <div class="flex-row" style="margin-bottom: 1.25rem;"><h3 class="text-sm text-bold" style="font-size: 1.1rem;" id="materiaModalTitle">Adicionar Matéria</h3><button class="btn btn-secondary" onclick="closeMateriaModal()" style="padding: 0.35rem 0.6rem;"><i class="fa-solid fa-xmark"></i></button></div>
+      <input type="text" id="newMateriaName" placeholder="Ex: Matemática, Física...">
+      <div style="display: flex; justify-content: flex-end; gap: 0.6rem; margin-top: 0.5rem;"><button class="btn btn-secondary" onclick="closeMateriaModal()">Cancelar</button><button class="btn btn-cyan" id="materiaModalSaveBtn" onclick="saveNewMateria()">Adicionar</button></div>
+    </div>
+  </div>
+
+  <div id="schoolItemModal" class="modal-overlay">
+    <div class="modal-box" style="border-top: 3px solid var(--accent-emerald);">
+      <div class="flex-row" style="margin-bottom: 1.25rem;"><h3 class="text-sm text-bold" style="font-size: 1.1rem;">Novo Conteúdo/Atividade</h3><button class="btn btn-secondary" onclick="closeSchoolItemModal()" style="padding: 0.35rem 0.6rem;"><i class="fa-solid fa-xmark"></i></button></div>
+      <select id="itemType">
+        <option value="conteudo">Conteúdo / Resumo</option>
+        <option value="atividade">Atividade / Prazo</option>
+      </select>
+      <input type="text" id="itemTitle" placeholder="Título">
+      <input type="text" id="itemDate" placeholder="Data opcional (Ex: 25/10/2026)">
+      <input type="text" id="itemVideoUrl" placeholder="Link de vídeo-aula (YouTube, etc.)">
+      
+      <div style="position: relative; margin-bottom: 0.85rem;">
+        <label style="display: flex; align-items: center; justify-content: center; gap: 0.6rem; background: rgba(255, 255, 255, 0.03); border: 1px dashed rgba(255, 255, 255, 0.2); padding: 1rem; border-radius: var(--radius-btn); cursor: pointer; font-size: 0.8rem; color: var(--text-muted); transition: var(--transition-fast);" for="itemImageFile">
+          <i class="fa-solid fa-image" style="color: var(--accent-emerald); font-size: 1.1rem;"></i>
+          <span id="fileNameLabel">Escolher imagem...</span>
+        </label>
+        <input type="file" id="itemImageFile" style="display: none;" accept="image/*" onchange="previewSelectedImage(event)">
+      </div>
+
+      <textarea id="itemDescription" rows="3" placeholder="Descrição detalhada..."></textarea>
+      <div style="display: flex; justify-content: flex-end; gap: 0.6rem; margin-top: 0.5rem;">
+        <button class="btn btn-secondary" onclick="closeSchoolItemModal()">Cancelar</button>
+        <button class="btn btn-emerald" onclick="saveSchoolItemData()">Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="viewItemModal" class="modal-overlay">
+    <div class="modal-box" style="border-top: 3px solid var(--accent-cyan);">
+      <div class="flex-row" style="margin-bottom: 0.85rem;">
+        <span id="viewItemTypeBadge" style="font-size: 10px; font-weight: 700; padding: 4px 10px; border-radius: 6px;"></span>
+        <button class="btn btn-secondary" onclick="closeViewItemModal()" style="padding: 0.35rem 0.6rem;"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <h3 class="text-sm text-bold" id="viewItemTitle" style="font-size: 1.15rem; margin-bottom: 0.4rem;"></h3>
+      <p class="text-xs text-muted" id="viewItemExtra" style="margin-bottom: 0.85rem;"></p>
+      
+      <div id="viewItemVideoContainer" style="margin-bottom: 0.85rem; display:none;">
+        <a id="viewItemVideoLink" href="" target="_blank" class="btn btn-cyan" style="width: 100%; justify-content: center;"><i class="fa-solid fa-video"></i> Assistir Vídeo-aula</a>
+      </div>
+
+      <div id="viewItemImageContainer" style="margin-bottom: 0.85rem; display:none; cursor: pointer;" onclick="openFullscreenImage()">
+        <img id="viewItemImage" src="" alt="Imagem" style="width: 100%; border-radius: 0.85rem; max-height: 220px; object-fit: cover; border: 1px solid var(--border-color);">
+      </div>
+
+      <div class="glass-card" style="margin-bottom: 1.25rem; background: rgba(3,6,14,0.6);">
+        <span class="text-xs text-muted text-bold">ANOTAÇÕES</span>
+        <p class="text-sm" id="viewItemDescription" style="margin-top: 6px; white-space: pre-wrap; font-size: 0.85rem; line-height: 1.5;"></p>
+      </div>
+      <div style="display: flex; justify-content: flex-end;">
+        <button class="btn btn-danger" id="deleteCurrentItemBtn" onclick=""><i class="fa-solid fa-trash-can"></i> Eliminar</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="fullscreenImageModal" class="modal-overlay" style="z-index: 99; padding:0;">
+    <div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; position:relative; padding:1.25rem;">
+      <button class="btn btn-secondary" onclick="closeFullscreenImage()" style="position: absolute; top: 1.25rem; right: 1.25rem; z-index: 100; border-radius: 50%; width: 44px; height: 44px;"><i class="fa-solid fa-xmark"></i></button>
+      <img id="fullscreenImgElement" src="" alt="Full" style="max-width:100%; max-height:85vh; object-fit:contain; border-radius:0.85rem;">
+    </div>
+  </div>
+
+  <div id="editProfileModal" class="modal-overlay">
+    <div class="modal-box" style="border-top: 3px solid var(--accent-indigo);">
+      <div class="flex-row" style="margin-bottom: 1.25rem;"><h3 class="text-sm text-bold" style="font-size: 1.1rem;">Editar Perfil</h3><button class="btn btn-secondary" onclick="closeEditProfileModal()" style="padding: 0.35rem 0.6rem;"><i class="fa-solid fa-xmark"></i></button></div>
+      <input type="text" id="configUsernameInput" placeholder="Ex: J.C">
+      <div style="display: flex; justify-content: flex-end; gap: 0.6rem; margin-top: 0.5rem;"><button class="btn btn-secondary" onclick="closeEditProfileModal()">Cancelar</button><button class="btn btn-primary" onclick="saveUserSettingsModal()">Guardar</button></div>
+    </div>
+  </div>
+
+  <div id="searchConfigModal" class="modal-overlay">
+    <div class="modal-box" style="border-top: 3px solid var(--accent-cyan);">
+      <div class="flex-row" style="margin-bottom: 1.25rem;"><h3 class="text-sm text-bold" style="font-size: 1.1rem;">Pesquisar</h3><button class="btn btn-secondary" onclick="closeSearchConfigModal()" style="padding: 0.35rem 0.6rem;"><i class="fa-solid fa-xmark"></i></button></div>
+      <input type="text" id="searchConfigInput" placeholder="Procurar definições..." oninput="filterConfigItems(this.value)">
+      <div id="searchResultsList" style="display: flex; flex-direction: column; gap: 0.5rem; max-height: 200px; overflow-y: auto;"></div>
+    </div>
+  </div>
+
+  <div id="qrConfigModal" class="modal-overlay">
+    <div class="modal-box" style="border-top: 3px solid var(--accent-emerald); text-align: center;">
+      <div class="flex-row" style="margin-bottom: 1.25rem;"><h3 class="text-sm text-bold" style="font-size: 1.1rem;">QR Code</h3><button class="btn btn-secondary" onclick="closeQrConfigModal()" style="padding: 0.35rem 0.6rem;"><i class="fa-solid fa-xmark"></i></button></div>
+      <div style="background: rgba(255,255,255,0.04); padding: 1.5rem; border-radius: 1.25rem; display: inline-block; margin-bottom: 1rem; border: 1px solid var(--border-color);">
+        <i class="fa-solid fa-qrcode" style="font-size: 5rem; color: var(--accent-emerald);"></i>
+      </div>
+      <p class="text-xs text-muted">Partilhe o seu perfil rapidamente.</p>
+    </div>
+  </div>
+
+  <script>
+    // ==========================================
+    // CONFIGURAÇÃO DO SUPABASE
+    // ==========================================
+    const SUPABASE_URL = 'https://vmrmcsqeyjdchmgfhbgc.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZtcm1jc3FleWpkY2htZ2ZoYmdjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTEwNzc2NDgsImV4cCI6MjEwNjY1MzY0OH0.vUddTczy1GowIxPJpBjPTpEPok_02PwgXHGqEy5CYwQ';
+
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    let currentUser = null;
+    let isRegistering = false;
+
+    document.getElementById('currentDateHeader').textContent = new Date().toLocaleDateString('pt-PT');
+
+    // Verificar sessão ativa ao carregar a página
+    async function checkSupabaseSession() {
+      const { data: { session } } = await supabaseClient.auth.getSession();
+      if (session) {
+        currentUser = session.user;
+        await fetchUserProfile();
+        document.getElementById('auth-screen').style.display = 'none';
+        initializeAppAppData();
+      } else {
+        document.getElementById('auth-screen').style.display = 'flex';
+      }
+    }
+
+    async function fetchUserProfile() {
+      if (!currentUser) return;
+      const { data, error } = await supabaseClient
+        .from('profiles')
+        .select('username')
+        .eq('id', currentUser.id)
+        .single();
+      
+      let username = data?.username || currentUser.email.split('@')[0];
+      userSettings = { username };
+      document.getElementById('welcomeUserName').textContent = 'Olá, ' + userSettings.username;
+      document.getElementById('configHeaderTitleName').textContent = userSettings.username;
+      document.getElementById('configUsernameInput').value = userSettings.username;
+      document.getElementById('configUserEmailLabel').textContent = currentUser.email;
+    }
+
+    function toggleAuthMode() {
+      isRegistering = !isRegistering;
+      document.getElementById('authUsername').style.display = isRegistering ? 'block' : 'none';
+      document.getElementById('authTitleMain').textContent = isRegistering ? 'Criar Conta por E-mail' : 'HubCentral Supabase';
+      document.getElementById('authSubTitleMain').textContent = isRegistering ? 'Preencha os dados para se registar' : 'Entre com o seu e-mail ou crie uma conta';
+      document.getElementById('authSubmitBtn').textContent = isRegistering ? 'Registar Conta' : 'Entrar com E-mail';
+      document.getElementById('authToggleBtn').textContent = isRegistering ? 'Já tem conta? Faça login' : 'Não tem conta? Crie uma com o e-mail';
+      document.getElementById('authErrorMsg').style.display = 'none';
+    }
+
+    async function handleAuthSubmit() {
+      const email = document.getElementById('authEmail').value.trim();
+      const password = document.getElementById('authPassword').value.trim();
+      const username = document.getElementById('authUsername').value.trim();
+      const errorBox = document.getElementById('authErrorMsg');
+
+      errorBox.style.display = 'none';
+
+      if (!email || !password) {
+        errorBox.textContent = 'Preencha o e-mail e a palavra-passe.';
+        errorBox.style.display = 'block';
+        return;
+      }
+
+      if (isRegistering) {
+        const { data, error } = await supabaseClient.auth.signUp({
+          email,
+          password,
+          options: {
+            data: { username: username || email.split('@')[0] }
+          }
+        });
+        if (error) {
+          errorBox.textContent = error.message;
+          errorBox.style.display = 'block';
+        } else {
+          alert('Conta criada com sucesso com o e-mail! Verifique a sua caixa de correio se necessário e faça login.');
+          toggleAuthMode();
+        }
+      } else {
+        const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+        if (error) {
+          errorBox.textContent = error.message;
+          errorBox.style.display = 'block';
+        } else {
+          location.reload();
+        }
+      }
+    }
+
+    async function handleLogout() {
+      await supabaseClient.auth.signOut();
+      location.reload();
+    }
+
+    // ==========================================
+    // DADOS E FUNCIONALIDADES DO PAINEL
+    // ==========================================
+    let userSettings = { username: 'J.C' };
+    let appsData = [];
+    let gamesData = [];
+    let notesData = [];
+    let schoolBimestres = [];
+
+    function initializeAppAppData() {
+      appsData = JSON.parse(localStorage.getItem('hub_apps_' + currentUser.id)) || [{ name: 'Google', url: 'https://www.google.com' }];
+      gamesData = JSON.parse(localStorage.getItem('hub_games_' + currentUser.id)) || [{ name: 'Poki', url: 'https://poki.com' }];
+      notesData = JSON.parse(localStorage.getItem('hub_notes_' + currentUser.id)) || [{ title: 'Minha Nota Exemplo', content: 'Escreva suas anotações aqui!' }];
+      schoolBimestres = JSON.parse(localStorage.getItem('hub_school_tabs_' + currentUser.id)) || [
+        { name: '1º Bimestre', status: 'ativo', startDate: '01/02/2026', endDate: '30/04/2026', subAreas: [ { name: 'Exatas', materias: [ { name: 'Matemática', items: [{ type: 'conteudo', title: 'Equações', date: '', videoUrl: '', imageData: '', description: 'Estudar fórmulas.' }] } ] } ] }
+      ];
+
+      renderApps(); 
+      renderGames(); 
+      renderNotes(); 
+      renderSchool(); 
+    }
+
+    async function saveUserSettingsModal() {
+      const nameInput = document.getElementById('configUsernameInput').value.trim();
+      if(!nameInput) return;
+      userSettings.username = nameInput;
+      
+      if(currentUser) {
+        await supabaseClient.from('profiles').update({ username: nameInput }).eq('id', currentUser.id);
+      }
+
+      document.getElementById('welcomeUserName').textContent = 'Olá, ' + userSettings.username;
+      document.getElementById('configHeaderTitleName').textContent = userSettings.username;
+      closeEditProfileModal();
+      alert('Nome de perfil atualizado com sucesso!');
+    }
+
+    function openEditProfileModal() { document.getElementById('editProfileModal').classList.add('show'); }
+    function closeEditProfileModal() { document.getElementById('editProfileModal').classList.remove('show'); }
+    function openSearchConfigModal() { document.getElementById('searchConfigModal').classList.add('show'); document.getElementById('searchConfigInput').value = ''; document.getElementById('searchResultsList').innerHTML = '<span class="text-xs text-muted" style="text-align:center; padding:1rem;">Digite para procurar...</span>'; }
+    function closeSearchConfigModal() { document.getElementById('searchConfigModal').classList.remove('show'); }
+    function openQrConfigModal() { document.getElementById('qrConfigModal').classList.add('show'); }
+    function closeQrConfigModal() { document.getElementById('qrConfigModal').classList.remove('show'); }
+
+    function filterConfigItems(query) {
+      const q = query.toLowerCase().trim();
+      const list = document.getElementById('searchResultsList');
+      list.innerHTML = '';
+      if(!q) { list.innerHTML = '<span class="text-xs text-muted" style="text-align:center; padding:1rem;">Digite para procurar...</span>'; return; }
+      const items = [{ title: 'Conta', desc: 'Sincronizado com Supabase' }, { title: 'Privacidade', desc: 'RLS Ativo' }, { title: 'Listas', desc: 'Ativo' }];
+      const filtered = items.filter(i => i.title.toLowerCase().includes(q));
+      if(filtered.length === 0) { list.innerHTML = '<span class="text-xs text-muted" style="text-align:center; padding:1rem;">Nenhum resultado.</span>'; return; }
+      filtered.forEach(it => { list.innerHTML += `<div style="background: rgba(255,255,255,0.03); padding: 0.75rem; border-radius: 0.75rem; border: 1px solid var(--border-color);"><div class="text-sm text-bold">${it.title}</div><div class="text-xs text-muted">${it.desc}</div></div>`; });
+    }
+
+    function triggerSettingAction(t) { alert('A secção "' + t + '" está ativa via Supabase.'); }
+    function resetAllAppData() { if(confirm('Tem a certeza absoluta? Todos os dados locais serão apagados.')) { localStorage.clear(); location.reload(); } }
+
+    function switchScreen(screenId) {
+      document.querySelectorAll('.screen-panel').forEach(scr => scr.classList.remove('active-screen'));
+      const target = document.getElementById('screen-' + screenId);
+      if(target) target.classList.add('active-screen');
+
+      const navMap = { inicio: 'inicio', hub: 'hub', apps: 'hub', jogos: 'hub', notas: 'hub', escolar: 'escolar', 'bimestre-detalhe': 'escolar', config: 'config' };
+      const mainNavId = navMap[screenId];
+      if(mainNavId) {
+        document.querySelectorAll('.bottom-nav-item').forEach(btn => btn.classList.remove('active'));
+        const activeBtn = document.getElementById('nav-' + mainNavId);
+        if(activeBtn) activeBtn.classList.add('active');
+      }
+      if(screenId === 'notas') renderNotes();
+      if(screenId === 'escolar') renderSchool();
+    }
+
+    function updateHubCounters() {
+      if(!currentUser) return;
+      document.getElementById('hubAppsCount').textContent = appsData.length + ' apps guardados';
+      document.getElementById('hubGamesCount').textContent = gamesData.length + ' jogos guardados';
+      document.getElementById('hubNotesCount').textContent = notesData.length + ' notas guardadas';
+      document.getElementById('statAppsCount').textContent = appsData.length;
+      document.getElementById('statGamesCount').textContent = gamesData.length;
+    }
+
+    function renderApps() {
+      const c = document.getElementById('appsListContainer'); c.innerHTML = '';
+      appsData.forEach((app, idx) => {
+        c.innerHTML += `<div class="glass-card flex-row" style="border-left: 4px solid var(--accent-cyan); margin-bottom: 0.85rem;">
+          <div style="cursor:pointer; flex:1; overflow:hidden;" onclick="window.open('${app.url}','_blank')"><h4 class="text-sm text-bold">${app.name}</h4><span class="text-xs text-muted">${app.url}</span></div>
+          <button class="btn btn-danger" onclick="deleteApp(${idx})" style="padding:0.4rem 0.7rem;"><i class="fa-solid fa-trash-can text-xs"></i></button></div>`;
+      });
+      updateHubCounters();
+      if(currentUser) localStorage.setItem('hub_apps_' + currentUser.id, JSON.stringify(appsData));
+    }
+    function openAppModal() { document.getElementById('appModal').classList.add('show'); }
+    function closeAppModal() { document.getElementById('appModal').classList.remove('show'); }
+    function saveNewApp() {
+      const name = document.getElementById('newAppName').value.trim(); let url = document.getElementById('newAppUrl').value.trim();
+      if(!name || !url) return; if(!url.startsWith('http')) url = 'https://' + url;
+      appsData.push({name, url}); closeAppModal(); renderApps();
+    }
+    function deleteApp(i) { appsData.splice(i,1); renderApps(); }
+
+    function renderGames() {
+      const c = document.getElementById('gamesListContainer'); c.innerHTML = '';
+      gamesData.forEach((g, idx) => {
+        c.innerHTML += `<div class="glass-card flex-row" style="border-left: 4px solid var(--accent-pink); margin-bottom: 0.85rem;">
+          <div style="cursor:pointer; flex:1; overflow:hidden;" onclick="window.open('${g.url}','_blank')"><h4 class="text-sm text-bold">${g.name}</h4><span class="text-xs text-muted">${g.url}</span></div>
+          <button class="btn btn-danger" onclick="deleteGame(${idx})" style="padding:0.4rem 0.7rem;"><i class="fa-solid fa-trash-can text-xs"></i></button></div>`;
+      });
+      updateHubCounters();
+      if(currentUser) localStorage.setItem('hub_games_' + currentUser.id, JSON.stringify(gamesData));
+    }
+    function openGameModal() { document.getElementById('gameModal').classList.add('show'); }
+    function closeGameModal() { document.getElementById('gameModal').classList.remove('show'); }
+    function saveNewGame() {
+      const name = document.getElementById('newGameName').value.trim(); let url = document.getElementById('newGameUrl').value.trim();
+      if(!name || !url) return; if(!url.startsWith('http')) url = 'https://' + url;
+      gamesData.push({name, url}); closeGameModal(); renderGames();
+    }
+    function deleteGame(i) { gamesData.splice(i,1); renderGames(); }
+
+    let editingNoteIdx = null;
+    function renderNotes() {
+      const c = document.getElementById('notesListContainer'); c.innerHTML = '';
+      if(notesData.length === 0) {
+        c.innerHTML = `<div class="glass-card" style="text-align:center; padding: 2.5rem; color: var(--text-muted); font-size: 0.85rem;">Nenhuma nota guardada. Clique em "+ Nota" acima.</div>`;
+        updateHubCounters();
+        return;
+      }
+      notesData.forEach((note, idx) => {
+        c.innerHTML += `<button class="item-card-btn" style="border-left: 4px solid var(--accent-amber);" onclick="openViewNoteModal(${idx})">
+          <div class="flex-row">
+            <span class="text-sm text-bold" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 85%; font-size: 1.02rem;">${note.title}</span>
+            <i class="fa-solid fa-chevron-right text-xs text-muted"></i>
+          </div>
+          <p class="text-xs text-muted" style="margin-top: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${note.content}</p>
+        </button>`;
+      });
+      updateHubCounters();
+      if(currentUser) localStorage.setItem('hub_notes_' + currentUser.id, JSON.stringify(notesData));
+    }
+    function openNoteModal() {
+      editingNoteIdx = null;
+      document.getElementById('noteModalTitle').textContent = 'Nova Nota';
+      document.getElementById('noteModalSaveBtn').textContent = 'Guardar';
+      document.getElementById('newNoteTitle').value = '';
+      document.getElementById('newNoteContent').value = '';
+      document.getElementById('noteModal').classList.add('show');
+    }
+    function openEditNoteModal(idx) {
+      closeViewNoteModal();
+      editingNoteIdx = idx;
+      document.getElementById('noteModalTitle').textContent = 'Editar Nota';
+      document.getElementById('noteModalSaveBtn').textContent = 'Guardar';
+      document.getElementById('newNoteTitle').value = notesData[idx].title;
+      document.getElementById('newNoteContent').value = notesData[idx].content;
+      document.getElementById('noteModal').classList.add('show');
+    }
+    function closeNoteModal() { document.getElementById('noteModal').classList.remove('show'); }
+    function saveNewNote() {
+      const title = document.getElementById('newNoteTitle').value.trim();
+      const content = document.getElementById('newNoteContent').value.trim();
+      if(!title) return;
+      if(editingNoteIdx !== null) { notesData[editingNoteIdx] = { title, content }; }
+      else { notesData.push({ title, content }); }
+      closeNoteModal(); renderNotes();
+    }
+    function openViewNoteModal(idx) {
+      const note = notesData[idx];
+      document.getElementById('viewNoteTitle').textContent = note.title;
+      document.getElementById('viewNoteContent').textContent = note.content;
+      document.getElementById('editNoteBtn').setAttribute('onclick', `openEditNoteModal(${idx})`);
+      document.getElementById('deleteNoteBtn').setAttribute('onclick', `deleteNote(${idx})`);
+      document.getElementById('viewNoteModal').classList.add('show');
+    }
+    function closeViewNoteModal() { document.getElementById('viewNoteModal').classList.remove('show'); }
+    function deleteNote(idx) {
+      if(confirm('Eliminar esta nota?')) { notesData.splice(idx, 1); closeViewNoteModal(); renderNotes(); }
+    }
+
+    let activeBimestreIndex = 0;
+    let activeSubAreaIndex = null;
+    let currentMatIndex = null;
+    let temporaryImageData = '';
+    let currentMatTab = 'conteudo';
+    let currentBimestreSubTab = 'ativo';
+
+    let editingBimestreIdx = null;
+    let editingSubAreaIdx = null;
+    let editingMateriaIdx = null;
+
+    function renderSchool() {
+      const container = document.getElementById('bimestresCardsContainer');
+      container.innerHTML = '';
+
+      const filteredBimestres = schoolBimestres.filter((bim) => {
+        let st = bim.status || 'ativo';
+        return st === currentBimestreSubTab;
+      });
+
+      document.getElementById('statBimestresCount').textContent = schoolBimestres.length;
+
+      let activeBimObj = schoolBimestres.find(b => (b.status || 'ativo') === 'ativo') || schoolBimestres[0];
+      let activeMateriasCount = 0;
+      let activeBimName = 'Nenhum Ativo';
+
+      if(activeBimObj) {
+        activeBimName = activeBimObj.name;
+        if(activeBimObj.subAreas) {
+          activeBimObj.subAreas.forEach(sa => {
+            if(sa.materias) activeMateriasCount += sa.materias.length;
+          });
+        }
+      }
+      document.getElementById('statMateriasCount').textContent = activeMateriasCount;
+      document.getElementById('statBimestreLabelName').textContent = activeBimName;
+
+      if(filteredBimestres.length === 0) {
+        container.innerHTML = `<div class="glass-card" style="text-align:center; padding: 2.5rem; color: var(--text-muted); font-size: 0.85rem;">Nenhum bimestre nesta categoria (${currentBimestreSubTab}).</div>`;
+        return;
+      }
+
+      filteredBimestres.forEach((bim) => {
+        const idx = schoolBimestres.indexOf(bim);
+        let totalSubs = bim.subAreas ? bim.subAreas.length : 0;
+        let st = bim.status || 'ativo';
+        let start = bim.startDate || '--/--/----';
+        let end = bim.endDate || '--/--/----';
+        
+        let statusBadgeColor = 'var(--accent-emerald)';
+        let statusIcon = 'fa-bolt';
+        let statusText = 'Ativo';
+        if(st === 'acomecar') { statusBadgeColor = 'var(--accent-amber)'; statusIcon = 'fa-clock'; statusText = 'A começar'; }
+        else if(st === 'concluido') { statusBadgeColor = 'var(--text-muted)'; statusIcon = 'fa-circle-check'; statusText = 'Concluído'; }
+
+        container.innerHTML += `<div class="glass-card flex-row" style="border-left: 4px solid ${statusBadgeColor}; cursor:pointer; margin-bottom: 0.85rem;" onclick="openBimestreDetalhes(${idx})">
+          <div style="display: flex; align-items: center; gap: 0.9rem; overflow:hidden; flex:1;">
+            <div style="width: 46px; height: 46px; background: rgba(255,255,255,0.05); color: ${statusBadgeColor}; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; flex-shrink:0;">
+              <i class="fa-solid ${statusIcon}"></i>
+            </div>
+            <div style="overflow:hidden;">
+              <h3 class="text-sm text-bold" style="font-size: 1.1rem;">${bim.name}</h3>
+              <span class="text-xs text-muted" style="display:block; margin-top:3px;"><i class="fa-solid fa-calendar-days"></i> ${start} - ${end}</span>
+              <span class="text-xs" style="color: ${statusBadgeColor}; display:block; margin-top:2px; font-weight:600;">Estado: ${statusText} • ${totalSubs} sub-áreas</span>
+            </div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 0.5rem; flex-shrink:0;">
+            <button class="btn btn-secondary" onclick="event.stopPropagation(); openEditBimestreModal(${idx})" style="padding: 0.4rem 0.6rem;"><i class="fa-solid fa-pen text-xs"></i></button>
+            <button class="btn btn-danger" onclick="event.stopPropagation(); deleteBimestre(${idx})" style="padding: 0.4rem 0.6rem;"><i class="fa-solid fa-trash-can text-xs"></i></button>
+            <i class="fa-solid fa-chevron-right text-xs text-muted"></i>
+          </div>
+        </div>`;
+      });
+      if(currentUser) localStorage.setItem('hub_school_tabs_' + currentUser.id, JSON.stringify(schoolBimestres));
+    }
+
+    function switchBimestreSubTab(subTab) {
+      currentBimestreSubTab = subTab;
+      document.querySelectorAll('#screen-escolar .chat-sub-tab').forEach(t => t.classList.remove('active'));
+      document.getElementById('bimestreSubTab-' + subTab).classList.add('active');
+      renderSchool();
+    }
+
+    function openBimestreDetalhes(bimIdx) {
+      activeBimestreIndex = bimIdx;
+      const bim = schoolBimestres[bimIdx];
+      document.getElementById('detalheBimestreName').textContent = bim.name;
+      renderSubAreasList();
+      switchScreen('bimestre-detalhe');
+    }
+
+    function openCopyBimestreModal() {
+      const select = document.getElementById('targetBimestreSelect');
+      select.innerHTML = '';
+      schoolBimestres.forEach((b, idx) => {
+        if(idx !== activeBimestreIndex) { select.innerHTML += `<option value="${idx}">${b.name}</option>`; }
+      });
+      if(select.options.length === 0) { select.innerHTML = `<option value="">Crie outro bimestre primeiro</option>`; }
+      document.getElementById('copyBimestreModal').classList.add('show');
+    }
+    function closeCopyBimestreModal() { document.getElementById('copyBimestreModal').classList.remove('show'); }
+    function executeCopyBimestre() {
+      const targetIdx = parseInt(document.getElementById('targetBimestreSelect').value);
+      if(isNaN(targetIdx)) { alert('Selecione um bimestre válido.'); return; }
+      const sourceBim = schoolBimestres[activeBimestreIndex];
+      schoolBimestres[targetIdx].subAreas = JSON.parse(JSON.stringify(sourceBim.subAreas || []));
+      closeCopyBimestreModal();
+      renderSchool();
+      alert(`Estrutura copiada com sucesso para ${schoolBimestres[targetIdx].name}!`);
+    }
+
+    function openShareStructureModal() {
+      document.getElementById('shareStructureText').value = JSON.stringify(schoolBimestres);
+      document.getElementById('shareStructureModal').classList.add('show');
+    }
+    function closeShareStructureModal() { document.getElementById('shareStructureModal').classList.remove('show'); }
+    function copyShareCode() {
+      const textarea = document.getElementById('shareStructureText');
+      textarea.select();
+      navigator.clipboard.writeText(textarea.value).then(() => alert('Código copiado!'));
+    }
+    function importShareCode() {
+      const val = document.getElementById('shareStructureText').value.trim();
+      if(!val) return;
+      try {
+        const parsed = JSON.parse(val);
+        if(Array.isArray(parsed)) {
+          if(confirm('Substituir os bimestres atuais?')) {
+            schoolBimestres = parsed;
+            closeShareStructureModal();
+            renderSchool();
+            alert('Importado com sucesso!');
+          }
+        }
+      } catch(e) { alert('JSON inválido.'); }
+    }
+
+    function renderSubAreasList() {
+      const container = document.getElementById('subAreasListContainer');
+      container.innerHTML = '';
+      const bim = schoolBimestres[activeBimestreIndex];
+      if(!bim.subAreas || bim.subAreas.length === 0) {
+        container.innerHTML = `<div class="glass-card" style="text-align:center; padding: 2.5rem; color: var(--text-muted); font-size: 0.85rem;">Nenhuma sub-área adicionada.</div>`;
+        return;
+      }
+      bim.subAreas.forEach((sa, sIdx) => {
+        container.innerHTML += `<div class="glass-card flex-row" style="margin-bottom: 0.85rem; cursor:pointer; border-left: 4px solid var(--accent-cyan);" onclick="openSubAreaDetalhes(${activeBimestreIndex}, ${sIdx})">
+          <div style="display: flex; align-items: center; gap: 0.85rem; overflow:hidden; flex:1;">
+            <div style="width: 40px; height: 40px; background: rgba(6,182,212,0.15); color: var(--accent-cyan); border-radius: 12px; display: flex; align-items: center; justify-content: center; flex-shrink:0;"><i class="fa-solid fa-layer-group text-xs"></i></div>
+            <div style="overflow:hidden;"><span class="text-sm text-bold" style="font-size: 1.02rem;">${sa.name}</span><span class="text-xs text-muted" style="display: block; font-size: 11px; margin-top: 2px;">${sa.materias ? sa.materias.length : 0} matérias</span></div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 0.5rem; flex-shrink:0;">
+            <button class="btn btn-secondary" onclick="event.stopPropagation(); openEditSubAreaModal(${sIdx})" style="padding: 0.4rem 0.6rem;"><i class="fa-solid fa-pen text-xs"></i></button>
+            <button class="btn btn-danger" onclick="event.stopPropagation(); deleteSubArea(${activeBimestreIndex}, ${sIdx})" style="padding: 0.4rem 0.6rem;"><i class="fa-solid fa-trash-can text-xs"></i></button>
+            <i class="fa-solid fa-chevron-right text-xs text-muted"></i>
+          </div></div>`;
+      });
+    }
+
+    function openSubAreaDetalhes(bimIdx, saIdx) {
+      activeBimestreIndex = bimIdx; activeSubAreaIndex = saIdx;
+      const bim = schoolBimestres[bimIdx]; const sa = bim.subAreas[saIdx];
+      document.getElementById('detalheSubAreaBimLabel').textContent = bim.name.toUpperCase();
+      document.getElementById('detalheSubAreaName').textContent = sa.name;
+      renderSubAreaMaterias();
+      switchScreen('subarea-detalhe');
+    }
+
+    function renderSubAreaMaterias() {
+      const container = document.getElementById('subAreaMateriasContainer'); container.innerHTML = '';
+      const sa = schoolBimestres[activeBimestreIndex].subAreas[activeSubAreaIndex];
+      if(!sa.materias || sa.materias.length === 0) { container.innerHTML = `<div class="glass-card" style="text-align:center; padding: 2.5rem; color: var(--text-muted); font-size: 0.85rem;">Nenhuma matéria adicionada.</div>`; return; }
+      sa.materias.forEach((mat, mIdx) => {
+        container.innerHTML += `<div class="glass-card flex-row" style="margin-bottom: 0.85rem; cursor:pointer; border-left: 4px solid var(--accent-emerald);" onclick="openMateriaDetalhes(${mIdx})">
+          <div style="display: flex; align-items: center; gap: 0.85rem; overflow:hidden; flex:1;">
+            <div style="width: 40px; height: 40px; background: rgba(16,185,129,0.15); color: var(--accent-emerald); border-radius: 12px; display: flex; align-items: center; justify-content: center; flex-shrink:0;"><i class="fa-solid fa-book text-xs"></i></div>
+            <div style="overflow:hidden;"><span class="text-sm text-bold" style="font-size: 1.02rem;">${mat.name}</span><span class="text-xs text-muted" style="display: block; font-size: 11px; margin-top: 2px;">${mat.items ? mat.items.length : 0} itens registados</span></div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 0.5rem; flex-shrink:0;">
+            <button class="btn btn-secondary" onclick="event.stopPropagation(); openEditMateriaModal(${mIdx})" style="padding: 0.4rem 0.6rem;"><i class="fa-solid fa-pen text-xs"></i></button>
+            <button class="btn btn-danger" onclick="event.stopPropagation(); deleteMateria(${mIdx})" style="padding: 0.4rem 0.6rem;"><i class="fa-solid fa-trash-can text-xs"></i></button>
+            <i class="fa-solid fa-chevron-right text-xs text-muted"></i>
+          </div></div>`;
+      });
+    }
+
+    function openMateriaDetalhes(matIdx) {
+      currentMatIndex = matIdx;
+      const sa = schoolBimestres[activeBimestreIndex].subAreas[activeSubAreaIndex];
+      const mat = sa.materias[matIdx];
+      document.getElementById('detalheMateriaSubAreaLabel').textContent = sa.name.toUpperCase();
+      document.getElementById('detalheMateriaName').textContent = mat.name;
+      switchMatTab('conteudo');
+      switchScreen('materia-detalhe');
+    }
+
+    function switchMatTab(tabType) {
+      currentMatTab = tabType;
+      document.querySelectorAll('#screen-materia-detalhe .chat-sub-tab').forEach(t => t.classList.remove('active'));
+      document.getElementById('matTab-' + tabType).classList.add('active');
+      renderMateriaItems();
+    }
+
+    function backToSubAreaScreen() { switchScreen('subarea-detalhe'); renderSubAreaMaterias(); }
+
+    function renderMateriaItems() {
+      const container = document.getElementById('materiaItemsContainer'); container.innerHTML = '';
+      const mat = schoolBimestres[activeBimestreIndex].subAreas[activeSubAreaIndex].materias[currentMatIndex];
+      if(!mat.items) mat.items = [];
+      const filtered = mat.items.filter(it => it.type === currentMatTab);
+      if(filtered.length === 0) { container.innerHTML = `<div class="glass-card" style="text-align:center; padding: 2.5rem; color: var(--text-muted); font-size: 0.85rem;">Nenhum ${currentMatTab} registado.</div>`; return; }
+      filtered.forEach((item) => {
+        const itemIdx = mat.items.indexOf(item);
+        const isAtiv = item.type === 'atividade';
+        container.innerHTML += `<button class="item-card-btn" style="border-left: 4px solid ${isAtiv ? 'var(--accent-amber)' : 'var(--accent-cyan)'};" onclick="openViewItemModal(${itemIdx})">
+          <div class="flex-row">
+            <div style="display: flex; align-items: center; gap: 0.75rem; overflow: hidden;">
+              <span style="font-size: 9px; font-weight: 700; padding: 4px 10px; border-radius: 6px; background: ${isAtiv?'rgba(245,158,11,0.2);color:var(--accent-amber)':'rgba(6,182,212,0.2);color:var(--accent-cyan)'};">${isAtiv?'ATIVIDADE':'CONTEÚDO'}</span>
+              <span class="text-sm text-bold" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 1.02rem;">${item.title}</span>
+            </div>
+            <i class="fa-solid fa-expand text-xs text-muted"></i>
+          </div>
+        </button>`;
+      });
+    }
+
+    function openBimestreModal() {
+      editingBimestreIdx = null;
+      document.getElementById('bimestreModalTitle').textContent = 'Novo Bimestre';
+      document.getElementById('bimestreModalSaveBtn').textContent = 'Criar';
+      document.getElementById('newBimestreName').value = '';
+      document.getElementById('newBimestreStatus').value = 'ativo';
+      document.getElementById('newBimestreStart').value = '';
+      document.getElementById('newBimestreEnd').value = '';
+      document.getElementById('bimestreModal').classList.add('show');
+    }
+    function openEditBimestreModal(idx) {
+      editingBimestreIdx = idx;
+      document.getElementById('bimestreModalTitle').textContent = 'Editar Bimestre';
+      document.getElementById('bimestreModalSaveBtn').textContent = 'Guardar';
+      document.getElementById('newBimestreName').value = schoolBimestres[idx].name;
+      document.getElementById('newBimestreStatus').value = schoolBimestres[idx].status || 'ativo';
+      document.getElementById('newBimestreStart').value = schoolBimestres[idx].startDate || '';
+      document.getElementById('newBimestreEnd').value = schoolBimestres[idx].endDate || '';
+      document.getElementById('bimestreModal').classList.add('show');
+    }
+    function closeBimestreModal() { document.getElementById('bimestreModal').classList.remove('show'); }
+    function saveNewBimestre() {
+      const name = document.getElementById('newBimestreName').value.trim();
+      const status = document.getElementById('newBimestreStatus').value;
+      const startDate = document.getElementById('newBimestreStart').value.trim();
+      const endDate = document.getElementById('newBimestreEnd').value.trim();
+      if(!name) return;
+      if(editingBimestreIdx !== null) {
+        schoolBimestres[editingBimestreIdx] = { ...schoolBimestres[editingBimestreIdx], name, status, startDate, endDate };
+      } else {
+        schoolBimestres.push({ name, status, startDate, endDate, subAreas: [] });
+      }
+      closeBimestreModal(); renderSchool();
+    }
+    function deleteBimestre(i) { if(confirm('Eliminar?')) { schoolBimestres.splice(i, 1); renderSchool(); } }
+
+    function openSubAreaModal() {
+      editingSubAreaIdx = null;
+      document.getElementById('subAreaModalTitle').textContent = 'Nova Sub-área';
+      document.getElementById('newSubAreaName').value = '';
+      document.getElementById('subAreaModal').classList.add('show');
+    }
+    function openEditSubAreaModal(sIdx) {
+      editingSubAreaIdx = sIdx;
+      document.getElementById('subAreaModalTitle').textContent = 'Editar Sub-área';
+      document.getElementById('newSubAreaName').value = schoolBimestres[activeBimestreIndex].subAreas[sIdx].name;
+      document.getElementById('subAreaModal').classList.add('show');
+    }
+    function closeSubAreaModal() { document.getElementById('subAreaModal').classList.remove('show'); }
+    function saveNewSubArea() {
+      const name = document.getElementById('newSubAreaName').value.trim(); if(!name) return;
+      if(!schoolBimestres[activeBimestreIndex].subAreas) schoolBimestres[activeBimestreIndex].subAreas = [];
+      if(editingSubAreaIdx !== null) { schoolBimestres[activeBimestreIndex].subAreas[editingSubAreaIdx].name = name; }
+      else { schoolBimestres[activeBimestreIndex].subAreas.push({ name, materias: [] }); }
+      closeSubAreaModal(); renderSubAreasList();
+    }
+    function deleteSubArea(bIdx, sIdx) { if(confirm('Eliminar?')) { schoolBimestres[bIdx].subAreas.splice(sIdx, 1); renderSubAreasList(); } }
+
+    function openMateriaModal() {
+      editingMateriaIdx = null;
+      document.getElementById('materiaModalTitle').textContent = 'Adicionar Matéria';
+      document.getElementById('newMateriaName').value = '';
+      document.getElementById('materiaModal').classList.add('show');
+    }
+    function openEditMateriaModal(mIdx) {
+      editingMateriaIdx = mIdx;
+      document.getElementById('materiaModalTitle').textContent = 'Editar Matéria';
+      document.getElementById('newMateriaName').value = schoolBimestres[activeBimestreIndex].subAreas[activeSubAreaIndex].materias[mIdx].name;
+      document.getElementById('materiaModal').classList.add('show');
+    }
+    function closeMateriaModal() { document.getElementById('materiaModal').classList.remove('show'); }
+    function saveNewMateria() {
+      const name = document.getElementById('newMateriaName').value.trim(); if(!name) return;
+      const sa = schoolBimestres[activeBimestreIndex].subAreas[activeSubAreaIndex];
+      if(!sa.materias) sa.materias = [];
+      if(editingMateriaIdx !== null) { sa.materias[editingMateriaIdx].name = name; }
+      else { sa.materias.push({ name, items: [] }); }
+      closeMateriaModal(); renderSubAreaMaterias();
+    }
+    function deleteMateria(mIdx) { if(confirm('Eliminar?')) { schoolBimestres[activeBimestreIndex].subAreas[activeSubAreaIndex].materias.splice(mIdx, 1); renderSubAreaMaterias(); } }
+
+    function openSchoolItemModal() {
+      document.getElementById('itemTitle').value = ''; document.getElementById('itemDate').value = '';
+      document.getElementById('itemVideoUrl').value = ''; document.getElementById('itemDescription').value = '';
+      document.getElementById('itemImageFile').value = ''; document.getElementById('fileNameLabel').textContent = 'Escolher imagem...';
+      temporaryImageData = '';
+      document.getElementById('schoolItemModal').classList.add('show');
+    }
+    function closeSchoolItemModal() { document.getElementById('schoolItemModal').classList.remove('show'); }
+    function previewSelectedImage(event) {
+      const file = event.target.files[0];
+      if(file) {
+        document.getElementById('fileNameLabel').textContent = file.name;
+        const reader = new FileReader();
+        reader.onload = function(e) { temporaryImageData = e.target.result; }
+        reader.readAsDataURL(file);
+      }
+    }
+    function saveSchoolItemData() {
+      const type = document.getElementById('itemType').value; const title = document.getElementById('itemTitle').value.trim();
+      const date = document.getElementById('itemDate').value.trim(); let videoUrl = document.getElementById('itemVideoUrl').value.trim();
+      const description = document.getElementById('itemDescription').value.trim();
+      if(!title) return;
+      if(videoUrl && !videoUrl.startsWith('http')) videoUrl = 'https://' + videoUrl;
+      const mat = schoolBimestres[activeBimestreIndex].subAreas[activeSubAreaIndex].materias[currentMatIndex];
+      if(!mat.items) mat.items = [];
+      mat.items.push({ type, title, date, videoUrl, imageData: temporaryImageData, description });
+      closeSchoolItemModal(); renderMateriaItems();
+    }
+
+    let activeImageUrl = '';
+    function openViewItemModal(itemIdx) {
+      const item = schoolBimestres[activeBimestreIndex].subAreas[activeSubAreaIndex].materias[currentMatIndex].items[itemIdx];
+      const isAtiv = item.type === 'atividade';
+      const badge = document.getElementById('viewItemTypeBadge');
+      badge.textContent = isAtiv ? 'ATIVIDADE' : 'CONTEÚDO';
+      badge.style.background = isAtiv ? 'rgba(245,158,11,0.2)' : 'rgba(6,182,212,0.2)';
+      badge.style.color = isAtiv ? 'var(--accent-amber)' : 'var(--accent-cyan)';
+      document.getElementById('viewItemTitle').textContent = item.title;
+      document.getElementById('viewItemExtra').textContent = item.date ? ('Data: ' + item.date) : '';
+      document.getElementById('viewItemDescription').textContent = item.description || 'Sem anotações.';
+      document.getElementById('deleteCurrentItemBtn').setAttribute('onclick', `deleteSchoolItem(${itemIdx})`);
+      document.getElementById('viewItemModal').classList.add('show');
+    }
+    function closeViewItemModal() { document.getElementById('viewItemModal').classList.remove('show'); }
+    function openFullscreenImage() { if(!activeImageUrl) return; document.getElementById('fullscreenImgElement').src = activeImageUrl; document.getElementById('fullscreenImageModal').classList.add('show'); }
+    function closeFullscreenImage() { document.getElementById('fullscreenImageModal').classList.remove('show'); }
+    function deleteSchoolItem(itemIdx) {
+      if(confirm('Eliminar?')) { schoolBimestres[activeBimestreIndex].subAreas[activeSubAreaIndex].materias[currentMatIndex].items.splice(itemIdx, 1); closeViewItemModal(); renderMateriaItems(); }
+    }
+
+    // Inicializar verificação do Supabase
+    checkSupabaseSession();
+  </script>
+</body>
+</html>
